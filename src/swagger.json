@@ -1,0 +1,132 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Node.js TypeScript API Example",
+    "version": "1.0.0",
+    "description": "API documentation for Node.js TypeScript project with middleware, event emitter, buffer, streams, and file upload."
+  },
+  "servers": [
+    { "url": "http://localhost:3000" }
+  ],
+  "paths": {
+    "/buffer": {
+      "get": {
+        "summary": "Get buffer example",
+        "responses": { "200": { "description": "Buffer string" } }
+      },
+      "post": {
+        "summary": "Buffer from data",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "data": { "type": "string" } }, "required": ["data"] }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Base64 and length" } }
+      }
+    },
+    "/stream": {
+      "get": { "summary": "Get stream example", "responses": { "200": { "description": "Streamed string" } } },
+      "post": { "summary": "Echo streamed data", "responses": { "200": { "description": "Echoed data" } } }
+    },
+    "/event": {
+      "get": { "summary": "EventEmitter ping", "responses": { "200": { "description": "Ping event response" } } }
+    },
+    "/upload": {
+      "post": {
+        "summary": "Upload a file",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "File info" } }
+      }
+    },
+    "/notify-upload": {
+      "get": { "summary": "Wait for file upload event", "responses": { "200": { "description": "Notification" } } }
+    }
+    ,
+    "/threadpool": {
+      "get": {
+        "summary": "Run CPU-bound task in worker thread",
+        "parameters": [
+          { "name": "number", "in": "query", "schema": { "type": "integer" }, "required": false, "description": "Number for computation" }
+        ],
+        "responses": { "200": { "description": "Computation result" } }
+      }
+    },
+    "/v8/serialize": {
+      "post": {
+        "summary": "Serialize object using V8",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "Serialized base64 string" } }
+      }
+    },
+    "/v8/deserialize": {
+      "post": {
+        "summary": "Deserialize base64 string using V8",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "serialized": { "type": "string" } }, "required": ["serialized"] } } } },
+        "responses": { "200": { "description": "Deserialized object" } }
+      }
+    },
+    "/v8/heap": {
+      "get": { "summary": "Get V8 heap statistics", "responses": { "200": { "description": "Heap stats" } } }
+    },
+    "/process/info": {
+      "get": { "summary": "Get process info", "responses": { "200": { "description": "Process info" } } }
+    },
+    "/process/memory": {
+      "get": { "summary": "Get process memory usage", "responses": { "200": { "description": "Memory usage" } } }
+    },
+    "/child/exec": {
+      "post": {
+        "summary": "Run shell command",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "command": { "type": "string" } }, "required": ["command"] } } } },
+        "responses": { "200": { "description": "Command output" } }
+      }
+    },
+    "/child/spawn": {
+      "post": {
+        "summary": "Spawn Node.js script as child process",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "scriptPath": { "type": "string" }, "args": { "type": "array", "items": { "type": "string" } } }, "required": ["scriptPath"] } } } },
+        "responses": { "200": { "description": "Script output" } }
+      }
+    },
+    "/child/fork": {
+      "post": {
+        "summary": "Fork Node.js script and communicate via IPC",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "scriptPath": { "type": "string" }, "args": { "type": "array", "items": { "type": "string" } }, "message": { "type": "object" } }, "required": ["scriptPath"] } } } },
+        "responses": { "200": { "description": "Forked script output" } }
+      }
+    },
+    "/pipe/uppercase": {
+      "post": {
+        "summary": "Pipe text through uppercase transform stream",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "text": { "type": "string" } }, "required": ["text"] } } } },
+        "responses": { "200": { "description": "Uppercased result" } }
+      }
+    },
+    "/pipe/backpressure": {
+      "post": {
+        "summary": "Demonstrate manual backpressure handling",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "text": { "type": "string" }, "chunkSize": { "type": "integer" } }, "required": ["text"] } } } },
+        "responses": { "200": { "description": "Backpressure result" } }
+      }
+    },
+    "/cluster/info": {
+      "get": { "summary": "Get cluster info", "responses": { "200": { "description": "Cluster info" } } }
+    }
+  }
+}
