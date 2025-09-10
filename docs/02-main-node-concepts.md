@@ -1283,3 +1283,140 @@ Use `process.nextTick` for work that must happen *before* the event loop continu
 ---
 
 
+## Handling Concurrency in Node.js
+
+**Definition:**  
+- Concurrency is the ability of an application to handle multiple operations at the same time, such as processing multiple requests concurrently.
+- In Node.js, concurrency is achieved through its event-driven, non-blocking I/O model.
+- Although Node.js runs JavaScript code on a single thread, it can manage many operations concurrently by:
+  - Offloading I/O and heavy tasks to the system or worker threads.
+  - Keeping the event loop responsive to handle new events and requests.
+- This design allows Node.js to efficiently process many simultaneous operations without blocking the main thread.
+
+**Key Techniques:**
+- **Asynchronous APIs:** Use callbacks, promises, or async/await to perform non-blocking operations.
+- **Event Loop:** Manages multiple concurrent operations by processing events and callbacks as tasks complete.
+- **Worker Threads:** Offload CPU-bound tasks to worker threads to prevent blocking the main event loop.
+- **Child Processes:** Run external scripts or parallelize work using separate processes.
+- **Cluster Module:** Scale across multiple CPU cores by running multiple Node.js processes.
+- **Load Balancer** To increase server on demand
+
+**Example: Handling Multiple Requests Concurrently**
+```javascript
+const http = require('http');
+
+http.createServer((req, res) => {
+  // Simulate async operation (e.g., database query)
+  setTimeout(() => {
+    res.end('Handled concurrently!');
+  }, 100);
+}).listen(3000, () => console.log('Server running on port 3000'));
+```
+- Multiple requests are handled without blocking, thanks to the event loop and async operations.
+
+**Interview Tip:**  
+Explain that Node.js achieves concurrency through non-blocking I/O and the event loop, and for CPU-bound tasks, worker threads or child processes should be used to avoid blocking the main thread.
+
+
+## Handling Memory Leaks in Node.js
+
+**Definition:** 
+- A memory leak occurs when an application allocates memory but fails to release it after it is no longer needed.
+- This causes memory usage to grow over time, potentially leading to degraded performance, crashes, or out-of-memory errors.
+- In Node.js, memory leaks can result from unintentionally retaining references to unused objects or data.
+- Proper detection and prevention are essential to maintain application stability and performance.
+
+**Common Causes:**
+- Unreleased event listeners
+- Global variables or large objects persisting unintentionally
+- Closures holding references to unused data
+- Caching without limits
+- Global variables
+
+**Detection Techniques:**
+- Monitor memory usage with `process.memoryUsage()`
+- Use heap snapshots and Chrome DevTools (`node --inspect`)
+- Use tools like `clinic.js`, `heapdump`, or `memwatch-next`
+- Watch for increasing memory in monitoring tools (e.g., `pm2 monit`)
+
+**Prevention and Fixes:**
+- Remove unused event listeners (`emitter.removeListener` or `emitter.off`)
+- Avoid unnecessary global variables
+- Limit cache sizes and use LRU caches
+- Regularly profile and review code for lingering references
+- Use **weak references** where possible to avoid preventing garbage collection of unused objects (e.g., with `WeakMap` or `WeakSet`).
+- Use **object pools** to reuse objects instead of creating new ones, reducing memory churn and garbage collection pressure.
+
+**Example: Using WeakMap to Prevent Memory Leaks**
+```javascript
+// WeakMap allows garbage collection of keys when no other references exist
+const cache = new WeakMap();
+
+function processUser(user) {
+  if (!cache.has(user)) {
+    // Expensive computation, result cached
+    cache.set(user, computeResult(user));
+  }
+  return cache.get(user);
+}
+
+function computeResult(user) {
+  // ...some expensive operation...
+  return { data: `Result for ${user.name}` };
+}
+
+// When 'user' is no longer referenced elsewhere, it and its cache entry are GC'd
+let user = { name: 'Alice' };
+console.log(processUser(user)); // { data: 'Result for Alice' }
+user = null; // Now eligible for garbage collection
+```
+**Example: Simple Object Pool Implementation**
+
+Object pools help manage and reuse a fixed number of objects, reducing memory churn and garbage collection overhead. This is useful for expensive-to-create objects (like database connections or buffers).
+
+```javascript
+class ObjectPool {
+  constructor(createFn, size = 5) {
+    this.createFn = createFn;
+    this.pool = [];
+    for (let i = 0; i < size; i++) {
+      this.pool.push(this.createFn());
+    }
+  }
+
+  acquire() {
+    return this.pool.length > 0 ? this.pool.pop() : this.createFn();
+  }
+
+  release(obj) {
+    this.pool.push(obj);
+  }
+}
+
+// Example: Pool of reusable buffers
+const bufferPool = new ObjectPool(() => Buffer.alloc(1024), 3);
+
+const buf1 = bufferPool.acquire();
+buf1.write('Hello');
+console.log(buf1.toString('utf8', 0, 5)); // Hello
+
+bufferPool.release(buf1); // Return buffer to pool
+```
+
+**Interview Tip:**  
+Object pools are useful for managing expensive resources and can help prevent memory leaks by controlling object lifecycle and reuse.
+
+
+
+**Example: Monitoring Memory Usage**
+```javascript
+setInterval(() => {
+  const used = process.memoryUsage();
+  console.log(`Heap Used: ${(used.heapUsed / 1024 / 1024).toFixed(2)} MB`);
+}, 10000);
+```
+
+**Interview Tip:**  
+ - Node.js uses V8's automatic garbage collection, but it only works if there are no references to unused objects
+  - Memory leaks occur when references are kept unintentionally
+

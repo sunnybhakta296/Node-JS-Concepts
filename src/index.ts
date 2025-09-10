@@ -7,7 +7,9 @@ import { getProcessInfo, getMemoryUsage } from './features/processExample';
 import { v8SerializeExample, v8DeserializeExample, v8HeapStats } from './features/v8Example';
 import { runInThreadPool } from './features/threadPool';
 import express, { Request, Response } from 'express';
+import { body, validationResult } from 'express-validator';
 import { loggerMiddleware } from './features/middleware';
+import { encryptObject } from './features/cryptoUtils';
 import { emitFileUploaded, onFileUploadedOnce, emitPing, onPingOnce } from './features/eventEmitter';
 import { bufferExample, bufferFromData } from './features/buffer';
 import { streamExample } from './features/streams';
@@ -237,5 +239,27 @@ app.get('/cluster/info', (_req: Request, res: Response) => {
         type: cluster.isPrimary ? 'primary' : 'worker'
     });
 });
+
+
+/**
+ * Secure endpoint example: Validates and sanitizes request body
+ */
+app.post(
+    '/secure-data',
+    [
+        body('email').isEmail().normalizeEmail(),
+        body('age').isInt({ min: 0, max: 120 }).toInt(),
+        body('name').trim().escape(),
+    ],
+    (req: Request, res: Response) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        // Encrypt the validated and sanitized request body
+        const encrypted = encryptObject(req.body);
+        res.json({ message: 'Request body is secure and encrypted!', encrypted });
+    }
+);
 
 export default app;
